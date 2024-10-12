@@ -1,187 +1,216 @@
-import { saveItem, getAllItems, deleteItem, updateItem } from '../model/ItemModel.js';
+import { saveItem } from '../model/ItemModel.js';
+import { getAllItems } from '../model/ItemModel.js';
+import { deleteItem } from '../model/ItemModel.js';
+import { updateItem } from '../model/ItemModel.js';
 
-document.querySelector('#ItemManage #ItemForm').addEventListener('submit', function(event) {
+document.querySelector('#ItemManage #ItemForm').addEventListener('submit', function(event){
     event.preventDefault();
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function(){
     refresh();
 });
 
-let itemId;
-let itemName;
-let itemQty;
-let itemPrice;
+var itemId ;
+var itemName;
+var itemQty;
+var itemPrice;
 
-document.querySelector('#ItemManage .saveBtn').addEventListener('click', function() {
-    itemId = document.querySelector('#ItemManage .itemId').value;
-    itemName = document.querySelector('#ItemManage .itemName').value;
-    itemQty = document.querySelector('#ItemManage .itemQty').value;
-    itemPrice = document.querySelector('#ItemManage .itemPrice').value;
+$('#ItemManage .saveBtn').click(function(){
+
+    itemId = $('#ItemManage .itemId').val();
+    itemName = $('#ItemManage .itemName').val();
+    itemQty = $('#ItemManage .itemQty').val();
+    itemPrice = $('#ItemManage .itemPrice').val();
 
     let item = {
-        itemId: itemId,
-        itemName: itemName,
-        itemQty: itemQty,
-        itemPrice: itemPrice
+        itemId : itemId,
+        itemName : itemName,
+        itemQty : itemQty,
+        itemPrice : itemPrice
     }
 
-    if (validate(item)) {
+    if(validate(item)){
         saveItem(item);
+        alert('Item Saved');
         refresh();
     }
+
 });
 
-function validate(item) {
+function validate(item){
+
     let valid = true;
 
-    if ((/^I0[0-9]+$/).test(item.itemId)) {
-        document.querySelector('#ItemManage .invalidCode').textContent = '';
+    if((/^I0[0-9]+$/).test(item.itemId)){
+        $('#ItemManage .invalidCode').text('');
         valid = true;
-    } else {
-        document.querySelector('#ItemManage .invalidCode').textContent = 'Invalid Item Id';
+    }
+    else{
+        $('#ItemManage .invalidCode').text('Invalid Item Id');
         valid = false;
     }
 
-    if ((/^(?:[A-Z][a-z]*)(?: [A-Z][a-z]*)*$/).test(item.itemName)) {
-        document.querySelector('#ItemManage .invalidName').textContent = '';
-    } else {
-        document.querySelector('#ItemManage .invalidName').textContent = 'Invalid Item Name';
+    if((/^(?:[A-Z][a-z]*)(?: [A-Z][a-z]*)*$/).test(item.itemName)){
+        $('#ItemManage .invalidName').text('');
+
+        if(valid){
+            valid = true;
+        }
+    }
+
+    else{
+        $('#ItemManage .invalidName').text('Invalid Item Name');
         valid = false;
     }
 
-    if (item.itemQty != null && item.itemQty > 0) {
-        document.querySelector('#ItemManage .invalidQty').textContent = '';
-    } else {
-        document.querySelector('#ItemManage .invalidQty').textContent = 'Invalid Item Quantity';
+    if(item.itemQty != null && item.itemQty > 0){
+        $('#ItemManage .invalidQty').text('');
+        if(valid){
+            valid = true;
+        }
+    }
+    else{
+        $('#ItemManage .invalidQty').text('Invalid Item Quantity');
         valid = false;
     }
 
-    if (item.itemPrice != null && item.itemPrice > 0) {
-        document.querySelector('#ItemManage .invalidPrice').textContent = '';
-    } else {
-        document.querySelector('#ItemManage .invalidPrice').textContent = 'Invalid Item Price';
+    if(item.itemPrice != null && item.itemPrice > 0){
+        $('#ItemManage .invalidPrice').text('');
+        if(valid){
+            valid = true;
+        }
+    }
+
+    else{
+        $('#ItemManage .invalidPrice').text('Invalid Item Price');
         valid = false;
     }
 
     let items = getAllItems();
 
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].itemId === item.itemId) {
-            document.querySelector('#ItemManage .invalidCode').textContent = 'Item Id already exists';
+    for(let i = 0; i < items.length; i++){
+        if(items[i].itemId === item.itemId){
+            $('#ItemManage .invalidCode').text('Item Id already exists');
             valid = false;
             return valid;
         }
     }
 
     return valid;
+
 }
 
-function extractNumber(id) {
+function extractNumber(id){
     var match = id.match(/I0(\d+)/);
-    if (match && match.length > 1) {
+    if(match && match.length > 1){
         return match[1];
     }
     return null;
 }
 
-function refresh() {
-    document.querySelector('#ItemManage .itemId').value = generateId();
-    document.querySelector('#ItemManage .itemName').value = '';
-    document.querySelector('#ItemManage .itemQty').value = '';
-    document.querySelector('#ItemManage .itemPrice').value = '';
+
+function refresh(){
+    $('#ItemManage .itemId').val(generateId());
+    $('#ItemManage .itemName').val('');
+    $('#ItemManage .itemQty').val('');
+    $('#ItemManage .itemPrice').val('');
     loadTable();
+    $('.counts .items h2').text(getAllItems().length);
 }
 
-function generateId() {
+function generateId(){
     let items = getAllItems();
 
-    if (!items || items.length == 0) {
+    if(!items || items.length == 0){
         return 'I01';
-    } else {
+    }
+    else{
         let lastItem = items[items.length - 1];
+        console.log(lastItem);
         let number = extractNumber(lastItem.itemId);
+        console.log(number);
         number++;
         return 'I0' + number;
     }
 }
 
-function loadTable() {
+function loadTable(){
     let items = getAllItems();
-    let tableRow = document.querySelector('#ItemManage .tableRow');
-    tableRow.innerHTML = '';
-    for (let i = 0; i < items.length; i++) {
-        let newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${items[i].itemId}</td>
-            <td>${items[i].itemName}</td>
-            <td>${items[i].itemQty}</td>
-            <td>${items[i].itemPrice}</td>
-        `;
-        tableRow.appendChild(newRow);
+    $('#ItemManage .tableRow').empty();
+    for(let i = 0; i < items.length; i++){
+        $('#ItemManage .tableRow').append(
+            '<tr> ' +
+            '<td>' + items[i].itemId + '</td>' +
+            '<td>' + items[i].itemName + '</td>' +
+            '<td>' + items[i].itemQty + '</td>' +
+            '<td>' + items[i].itemPrice + '</td>' +
+            '</tr>'
+        );
     }
 }
 
-document.querySelector('#ItemManage .tableRow').addEventListener('click', function(event) {
-    let target = event.target;
-    if (target.tagName === 'TD') {
-        let row = target.parentNode;
-        let id = row.children[0].textContent;
-        let name = row.children[1].textContent;
-        let qty = row.children[2].textContent;
-        let price = row.children[3].textContent;
-        document.querySelector('#ItemManage .itemId').value = id;
-        document.querySelector('#ItemManage .itemName').value = name;
-        document.querySelector('#ItemManage .itemQty').value = qty;
-        document.querySelector('#ItemManage .itemPrice').value = price;
-    }
+$('#ItemManage .tableRow').on('click', 'tr', function(){
+    let id = $(this).children('td:eq(0)').text();
+    let name = $(this).children('td:eq(1)').text();
+    let qty = $(this).children('td:eq(2)').text();
+    let price = $(this).children('td:eq(3)').text();
+
+    $('#ItemManage .itemId').val(id);
+    $('#ItemManage .itemName').val(name);
+    $('#ItemManage .itemQty').val(qty);
+    $('#ItemManage .itemPrice').val(price);
 });
 
-document.querySelector('#ItemManage .deleteBtn').addEventListener('click', function() {
-    let id = document.querySelector('#ItemManage .itemId').value;
+$('#ItemManage .deleteBtn').click(function(){
+    let id = $('#ItemManage .itemId').val();
     let items = getAllItems();
-    let index = items.findIndex(item => item.itemId === id);
-    if (index >= 0) {
-        deleteItem(index);
+    let item = items.findIndex(item => item.itemId === id);
+    if(item >= 0){
+        deleteItem(item);
+        alert('Item Deleted');
         refresh();
-    } else {
-        document.querySelector('#ItemManage .invalidCode').textContent = 'Item Id does not exist';
+    }
+    else{
+        $('#ItemManage .invalidCode').text('Item Id does not exist');
     }
 });
 
-document.querySelector('#ItemManage .updateBtn').addEventListener('click', function() {
+$('#ItemManage .updateBtn').click(function(){
     let item = {
-        itemId: 'I00',
-        itemName: document.querySelector('#ItemManage .itemName').value,
-        itemQty: document.querySelector('#ItemManage .itemQty').value,
-        itemPrice: document.querySelector('#ItemManage .itemPrice').value
+        itemId : 'I00',
+        itemName : $('#ItemManage .itemName').val(),
+        itemQty : $('#ItemManage .itemQty').val(),
+        itemPrice : $('#ItemManage .itemPrice').val()
     }
 
     let valid = validate(item);
 
-    item.itemId = document.querySelector('#ItemManage .itemId').value;
+    item.itemId = $('#ItemManage .itemId').val();
 
-    if (valid) {
+    if(valid){
         let items = getAllItems();
         let index = items.findIndex(i => i.itemId === item.itemId);
         updateItem(index, item);
+        alert('Item Updated');
         refresh();
     }
 });
 
-document.querySelector('#ItemManage .clearBtn').addEventListener('click', function() {
+$('#ItemManage .clearBtn').click(function(){
     refresh();
 });
 
-document.querySelector('#ItemManage .searchBtn').addEventListener('click', function() {
-    let id = document.querySelector('#ItemManage .itemId').value;
+$('#ItemManage .searchBtn').click(function(){
+    let id = $('#ItemManage .itemId').val();
     let items = getAllItems();
     let item = items.find(item => item.itemId === id);
-    if (item) {
-        document.querySelector('#ItemManage .itemName').value = item.itemName;
-        document.querySelector('#ItemManage .itemQty').value = item.itemQty;
-        document.querySelector('#ItemManage .itemPrice').value = item.itemPrice;
-    } else {
-        document.querySelector('#ItemManage .invalidCode').textContent = 'Item Id does not exist';
+    if(item){
+        $('#ItemManage .itemName').val(item.itemName);
+        $('#ItemManage .itemQty').val(item.itemQty);
+        $('#ItemManage .itemPrice').val(item.itemPrice);
+    }
+    else{
+        $('#ItemManage .invalidCode').text('Item Id does not exist');
     }
 });

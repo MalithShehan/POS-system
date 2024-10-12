@@ -1,155 +1,171 @@
-import { getAllOrders, saveOrder } from "../model/OrderModel.js";
+import { getAllOrders } from "../model/OrderModel.js";
 import { getAllCustomers } from "../model/CustomerModel.js";
 import { getAllItems, updateItem } from "../model/ItemModel.js";
+import { saveOrder } from "../model/OrderModel.js";
 
 var itemId;
 var itemQty;
 var orderQty;
 
-document.addEventListener('DOMContentLoaded', function () {
+$(document).ready(function () {
     refresh();
 });
 
-document.querySelector('.orderManageBtn').addEventListener('click', function () {
+$('.orderManageBtn').click(function(){
     refresh();
 });
 
-function refresh() {
-    document.querySelector('#OrderManage .orderId').value = generateId();
-    document.querySelector('#OrderManage .orderDate').value = new Date().toISOString().split('T')[0];
+function refresh(){
+    $('#OrderManage .orderId').val(generateId());
+    $('#OrderManage .orderDate').val(new Date().toISOString().split('T')[0]);
     loadCustomer();
     loadItems();
+    $('#OrderManage .Total').text("");
+    // $('#OrderManage .SubTotal').text("");
+    // $('#OrderManage .SubTotal').text("");
+    $('#OrderManage .Balance').val("");
+    $('#OrderManage .Cash').val('');
+    $('#OrderManage .Discount').val('');
+
+    $('.counts .orders h2').text(getAllOrders().length);
 }
 
-function extractNumber(id) {
+function extractNumber(id){
     var match = id.match(/OD(\d+)/);
-    if (match && match.length > 1) {
+    if(match && match.length > 1){
         return match[1];
     }
     return null;
 }
 
-function generateId() {
+function generateId(){
     let orders = getAllOrders();
 
-    if (orders.length === 0) {
+    // alert(orders.length);
+
+    if(orders.length === 0){
         return 'OD01';
-    } else {
+    }
+    else{
+        // alert('awa');
         let orderId = orders[orders.length - 1].orderId;
         let number = extractNumber(orderId);
         number++;
+        // alert('OD0' + number);
         return 'OD0' + number;
     }
 }
 
-function loadCustomer() {
-    let cmb = document.querySelector('#OrderManage .customers');
-    cmb.innerHTML = '';
-    let option = [''];
+function loadCustomer(){
+    let cmb = $('#OrderManage .customers');
+    cmb.empty();
+    let option = [];
     let customers = getAllCustomers();
-    customers.forEach(customer => {
-        option.push(customer.custId);
-    });
+    option.unshift('');
+    for (let i = 0; i < customers.length; i++) {
+        option.push(customers[i].custId);
+    }
 
-    option.forEach(value => {
-        let optionElement = document.createElement('option');
-        optionElement.value = value;
-        optionElement.text = value;
-        cmb.appendChild(optionElement);
+    $.each(option, function (index, value) {
+        cmb.append($('<option>').val(value).text(value));
     });
 }
 
-document.querySelector('#OrderManage .customers').addEventListener('change', function () {
-    let customer = getAllCustomers().find(c => c.custId === this.value);
-    document.querySelector('#OrderManage .custId').value = customer.custId;
-    document.querySelector('#OrderManage .custName').value = customer.custName;
-    document.querySelector('#OrderManage .custAddress').value = customer.custAddress;
-    document.querySelector('#OrderManage .custSalary').value = customer.custSalary;
+$('#OrderManage .customers').change(function(){
+    let customer = getAllCustomers().find(c => c.custId === $(this).val());
+    $('#OrderManage .custId').val(customer.custId);
+    $('#OrderManage .custName').val(customer.custName);
+    $('#OrderManage .custAddress').val(customer.custAddress);
+    $('#OrderManage .custSalary').val(customer.custSalary);
 });
 
-function loadItems() {
-    let cmb = document.querySelector('#OrderManage .itemCmb');
-    cmb.innerHTML = '';
-    let option = [''];
+function loadItems(){
+    let cmb = $('#OrderManage .itemCmb');
+    cmb.empty();
+    let option = [];
     let items = getAllItems();
 
-    items.forEach(item => {
-        option.push(item.itemId);
-    });
+    for (let i = 0; i < items.length; i++) {
+        option.push(items[i].itemId);
+    }
 
-    option.forEach(value => {
-        let optionElement = document.createElement('option');
-        optionElement.value = value;
-        optionElement.text = value;
-        cmb.appendChild(optionElement);
+    option.unshift('');
+
+    $.each(option, function (index, value) {
+        cmb.append($('<option>').val(value).text(value));
     });
 }
 
-document.querySelector('#OrderManage .itemCmb').addEventListener('change', function () {
-    let item = getAllItems().find(i => i.itemId === this.value);
+$('#OrderManage .itemCmb').change(function(){
+    let item = getAllItems().find(i => i.itemId === $(this).val());
     itemId = item.itemId;
+    // alert(item.itemQty);
     itemQty = item.itemQty;
-    orderQty = parseInt(document.querySelector('#OrderManage .orderQty').value, 10);
-    document.querySelector('#OrderManage .addBtn').textContent = 'Add';
-    document.querySelector('#OrderManage .itemCode').value = item.itemId;
-    document.querySelector('#OrderManage .itemName').value = item.itemName;
-    document.querySelector('#OrderManage .itemQty').value = item.itemQty;
-    document.querySelector('#OrderManage .itemPrice').value = item.itemPrice;
+    $('#OrderManage .addBtn').text('Add');
+    $('#OrderManage .itemCode').val(item.itemId);
+    $('#OrderManage .itemName').val(item.itemName);
+    $('#OrderManage .itemQty').val(item.itemQty);
+    $('#OrderManage .itemPrice').val(item.itemPrice);
 });
 
 let getItems = [];
 
-function clear(tableCount) {
-    if (tableCount === 1) {
-        document.querySelector('#OrderManage .itemCode').value = '';
-        document.querySelector('#OrderManage .itemName').value = '';
-        document.querySelector('#OrderManage .itemPrice').value = '';
-        document.querySelector('#OrderManage .itemQty').value = '';
-        document.querySelector('#OrderManage .orderQty').value = '';
-        document.querySelector('#OrderManage .SubTotal').textContent = '';
-        document.querySelector('#OrderManage .Cash').value = '';
-        document.querySelector('#OrderManage .Total').textContent = '';
-        document.querySelector('#OrderManage .Discount').value = '';
-        document.querySelector('#OrderManage .itemCmb').value = '';
-    } else {
-        document.querySelector('#OrderManage .custId').value = '';
-        document.querySelector('#OrderManage .custName').value = '';
-        document.querySelector('#OrderManage .custAddress').value = '';
-        document.querySelector('#OrderManage .custSalary').value = '';
-        document.querySelector('#OrderManage .itemCode').value = '';
-        document.querySelector('#OrderManage .itemName').value = '';
-        document.querySelector('#OrderManage .itemPrice').value = '';
-        document.querySelector('#OrderManage .itemQty').value = '';
-        document.querySelector('#OrderManage .orderQty').value = '';
+function clear(tableCount){
+    if(tableCount === 1){
+        $('#OrderManage .itemCode').val('');
+        $('#OrderManage .itemName').val('');
+        $('#OrderManage .itemPrice').val('');
+        $('#OrderManage .itemQty').val('');
+        $('#OrderManage .orderQty').val('');
+        $('#OrderManage .SubTotal').text('');
+        $('#OrderManage .Cash').val('');
+        $('#OrderManage .Total').text('');
+        $('#OrderManage .Discount').val('');
+        $('#OrderManage .itemCmb').val('');
+
+    }
+    else{
+        $('#OrderManage .custId').val('');
+        $('#OrderManage .custName').val('');
+        $('#OrderManage .custAddress').val('');
+        $('#OrderManage .custSalary').val('');
+        $('#OrderManage .itemCode').val('');
+        $('#OrderManage .itemName').val('');
+        $('#OrderManage .itemPrice').val('');
+        $('#OrderManage .itemQty').val('');
+        $('#OrderManage .orderQty').val('');
     }
 }
 
-document.querySelector('#OrderManage .addBtn').addEventListener('click', function () {
+$('#OrderManage .addBtn').click(function(){
 
-    if (document.querySelector('#OrderManage .addBtn').textContent === 'delete') {
+    if($('#OrderManage .addBtn').text() === 'delete'){
         dropItem();
-    } else {
+    }
+
+    else{
         let getItem = {
-            itemCode: document.querySelector('#OrderManage .itemCode').value,
-            getItems: document.querySelector('#OrderManage .itemName').value,
-            itemPrice: parseFloat(document.querySelector('#OrderManage .itemPrice').value),
-            itemQty: parseInt(document.querySelector('#OrderManage .orderQty').value, 10),
-            total: parseFloat(document.querySelector('#OrderManage .itemPrice').value) * parseInt(document.querySelector('#OrderManage .orderQty').value, 10)
+            itemCode: $('#OrderManage .itemCode').val(),
+            getItems: $('#OrderManage .itemName').val(),
+            itemPrice: parseFloat($('#OrderManage .itemPrice').val()),
+            itemQty: parseInt($('#OrderManage .orderQty').val(), 10),
+            total: parseFloat($('#OrderManage .itemPrice').val()) * parseInt($('#OrderManage .orderQty').val(), 10)
         };
 
-        let itemQty = parseInt(document.querySelector('#OrderManage .itemQty').value, 10);
-        let orderQty = parseInt(document.querySelector('#OrderManage .orderQty').value, 10);
+        let itemQty = parseInt($('#OrderManage .itemQty').val(), 10);
+        let orderQty = parseInt($('#OrderManage .orderQty').val(), 10);
 
-        if (itemQty >= orderQty) {
-            if (document.querySelector('#OrderManage .custId').value !== '' && document.querySelector('#OrderManage .custName').value !== null) {
-                if (orderQty > 0) {
+        if(itemQty >= orderQty){
+            if($('#OrderManage .custId').val() !== '' && $('#OrderManage .custName').val() !== null){
+                if(orderQty > 0){
                     let item = getItems.find(I => I.itemCode === getItem.itemCode);
-                    if (item == null) {
+                    if(item == null){
                         getItems.push(getItem);
                         loadTable();
                         clear(1);
                         setTotal();
-                    } else {
+                    }
+                    else{
                         alert('Already Added');
                     }
                 } else {
@@ -164,59 +180,63 @@ document.querySelector('#OrderManage .addBtn').addEventListener('click', functio
     }
 });
 
-function loadTable() {
-    let tableRows = document.querySelector('#OrderManage .tableRows');
-    tableRows.innerHTML = '';
-    for (let i = 0; i < getItems.length; i++) {
-        tableRows.innerHTML += `
-            <div>
-                <div>${getItems[i].itemCode}</div>
-                <div>${getItems[i].getItems}</div>
-                <div>${getItems[i].itemPrice}</div>
-                <div>${getItems[i].itemQty}</div>
-                <div>${getItems[i].total}</div>
-            </div>`;
+
+
+function loadTable(){
+    $('#OrderManage .tableRows').empty();
+    for(let i = 0; i < getItems.length; i++){
+        $('#OrderManage .tableRows').append(
+            '<div> ' +
+            '<div>' + getItems[i].itemCode + '</div>' +
+            '<div>' + getItems[i].getItems + '</div>' +
+            '<div>' + getItems[i].itemPrice + '</div>' +
+            '<div>' + getItems[i].itemQty + '</div>' +
+            '<div>' + getItems[i].total + '</div>' +
+            '</tr>'
+        );
     }
 }
 
-function setTotal() {
+function setTotal(){
     let total = 0;
-    for (let i = 0; i < getItems.length; i++) {
+    for(let i = 0; i < getItems.length; i++){
         total += getItems[i].total;
     }
-    document.querySelector('#OrderManage .Total').textContent = total;
+    $('#OrderManage .Total').text(total);
 }
 
-document.querySelector('#OrderManage .placeOrder').addEventListener('click', function () {
-    let cash = parseFloat(document.querySelector('#OrderManage .Cash').value);
-    let total = parseFloat(document.querySelector('#OrderManage .Total').textContent);
-    let discount = parseFloat(document.querySelector('#OrderManage .Discount').value);
+$('#OrderManage .placeOrder').click(function(){
+    let cash = parseFloat($('#OrderManage .Cash').val());
+    let total = parseFloat($('#OrderManage .Total').text());
+    let discount = parseFloat($('#OrderManage .Discount').val());
 
-    if (cash >= total) {
-        if (discount >= 0 && discount <= 100) {
+    // alert(cash + ' ' + total + ' ' + discount);
+
+    if(cash >= total){
+        if(discount >= 0 && discount <= 100){
             let subTotal = total - (total * discount / 100);
-            document.querySelector('#OrderManage .SubTotal').textContent = subTotal.toFixed(2);
+            $('#OrderManage .SubTotal').text(subTotal.toFixed(2));
             let balance = cash - subTotal;
-            document.querySelector('#OrderManage .Balance').value = balance.toFixed(2);
+            $('#OrderManage .Balance').val(balance.toFixed(2));
 
             let Order = {
-                orderId: document.querySelector('#OrderManage .orderId').value,
-                orderDate: document.querySelector('#OrderManage .orderDate').value,
-                custId: document.querySelector('#OrderManage .custId').value,
-                items: getItems,
-                total: total,
-                discount: discount,
-                subTotal: subTotal,
-                cash: cash,
-                balance: balance
+                orderId : $('#OrderManage .orderId').val(),
+                orderDate : $('#OrderManage .orderDate').val(),
+                custId : $('#OrderManage .custId').val(),
+                items : getItems,
+                total : total,
+                discount : discount,
+                subTotal : subTotal,
+                cash : cash,
+                balance : balance
             }
 
             saveOrder(Order);
             updateItemData();
-
             getItems = [];
             loadTable();
             clear(2);
+            alert('Order Placed');
             refresh();
         } else {
             alert('Invalid Discount');
@@ -226,9 +246,10 @@ document.querySelector('#OrderManage .placeOrder').addEventListener('click', fun
     }
 });
 
-function updateItemData() {
+
+function updateItemData(){
     let items = getAllItems();
-    for (let i = 0; i < getItems.length; i++) {
+    for(let i = 0; i < getItems.length; i++){
         let item = items.find(I => I.itemId === getItems[i].itemCode);
         item.itemQty -= getItems[i].itemQty;
         let index = items.findIndex(I => I.itemId === getItems[i].itemCode);
@@ -236,28 +257,31 @@ function updateItemData() {
     }
 }
 
-document.querySelector('.mainTable .tableRows').addEventListener('click', function (event) {
-    if (event.target.tagName === 'DIV') {
-        let itemCode = event.target.children[0].textContent;
-        let itemName = event.target.children[1].textContent;
-        let price = event.target.children[2].textContent;
-        let qty = event.target.children[3].textContent;
+$('.mainTable .tableRows').on('click', 'div', function(){
+    let itemCode = $(this).children('div:eq(0)').text();
+    let itemName = $(this).children('div:eq(1)').text();
+    let price = $(this).children('div:eq(2)').text();
+    let qty = $(this).children('div:eq(3)').text();
 
-        document.querySelector('#OrderManage .itemCode').value = itemCode;
-        document.querySelector('#OrderManage .itemName').value = itemName;
-        document.querySelector('#OrderManage .itemPrice').value = price;
-        document.querySelector('#OrderManage .orderQty').value = qty;
+    $('#OrderManage .itemCode').val(itemCode);
+    $('#OrderManage .itemName').val(itemName);
+    $('#OrderManage .itemPrice').val(price);
+    $('#OrderManage .orderQty').val(qty);
 
-        document.querySelector('#OrderManage .ItemSelect .addBtn').textContent = 'delete';
-    }
+    $('#OrderManage .ItemSelect .addBtn').text('delete');
+    $('#OrderManage .ItemSelect .addBtn').css('background-color', 'red');
 });
 
-function dropItem() {
-    let itemCode = document.querySelector('#OrderManage .itemCode').value;
+function dropItem(){
+    let itemCode = $('#OrderManage .itemCode').val();
     let item = getItems.find(I => I.itemCode === itemCode);
     let index = getItems.findIndex(I => I.itemCode === itemCode);
     getItems.splice(index, 1);
+    alert('Item Removed');
     loadTable();
     clear(1);
     setTotal();
 }
+
+
+// $('#orderManage .itemCmb')
